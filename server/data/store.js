@@ -1,11 +1,8 @@
-const config = {
-  redirectUrl: "",
-  redirectTime: 0
-};
+const links = {};
 
 const responses = [];
 
 module.exports = {
-  config,
+  links,
   responses
 };
