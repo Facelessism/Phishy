@@ -1,22 +1,26 @@
 const express = require("express");
 const router = express.Router();
 
-const { config, responses } = require("../data/store");
+const { links, responses } = require("../data/store");
 
-router.get("/config", (req, res) => {
-  res.json(config);
-});
-
-router.post("/submit", (req, res) => {
+router.post("/submit/:id", (req, res) => {
+  const { id } = req.params;
   const { answers } = req.body;
 
-  if (!answers || !Array.isArray(answers)) {
+  if (!links[id]) {
+    return res.status(404).json({
+      message: "Invalid or expired link"
+    });
+  }
+
+  if (!Array.isArray(answers)) {
     return res.status(400).json({
       message: "Invalid answers"
     });
   }
 
   responses.push({
+    linkId: id,
     answers,
     submittedAt: new Date()
   });

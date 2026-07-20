@@ -2,30 +2,61 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../middleware/auth");
-const { config, responses } = require("../data/store");
+const { links, responses } = require("../data/store");
 
-router.post("/config", auth, (req, res) => {
-  const { redirectUrl, redirectTime } = req.body;
+function generateId(length = 6) {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let id = "";
 
-  if (
-    typeof redirectUrl !== "string" ||
-    typeof redirectTime !== "number"
-  ) {
+  do {
+    id = "";
+    for (let i = 0; i < length; i++) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+  } while (links[id]);
+
+  return id;
+}
+
+router.post("/create", auth, (req, res) => {
+  const { targetUrl, redirectTime } = req.body;
+
+  if (typeof targetUrl !== "string" || typeof redirectTime !== "number") {
     return res.status(400).json({
-      message: "Invalid configuration"
+      message: "Invalid input"
     });
   }
 
-  config.redirectUrl = redirectUrl;
-  config.redirectTime = redirectTime;
+  try {
+    new URL(targetUrl);
+  } catch {
+    return res.status(400).json({
+      message: "Invalid URL"
+    });
+  }
 
-  res.status(200).json({
-    message: "Configuration updated successfully"
+  if (redirectTime < 0 || redirectTime > 1000) {
+    return res.status(400).json({
+      message: "Redirect time must be between 0 and 1000 seconds"
+    });
+  }
+
+  const id = generateId();
+
+  links[id] = {
+    targetUrl,
+    redirectTime,
+    createdAt: new Date()
+  };
+
+  res.status(201).json({
+    message: "Short link created successfully",
+    shortUrl: `/s/${id}`
   });
 });
 
 router.get("/responses", auth, (req, res) => {
-  res.status(200).json(responses);
+  res.json(responses);
 });
 
 module.exports = router;
