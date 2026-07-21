@@ -1,29 +1,25 @@
 const express = require("express");
+const crypto = require("crypto");
+
 const router = express.Router();
 
 const auth = require("../middleware/auth");
 const { links, responses } = require("../data/store");
 
-function generateId(length = 6) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let id = "";
-
-  do {
-    id = "";
-    for (let i = 0; i < length; i++) {
-      id += chars[Math.floor(Math.random() * chars.length)];
-    }
-  } while (links[id]);
-
-  return id;
-}
-
 router.post("/create", auth, (req, res) => {
-  const { targetUrl, redirectTime } = req.body;
+  const {
+    targetUrl,
+    redirectTime,
+    quiz
+  } = req.body;
 
-  if (typeof targetUrl !== "string" || typeof redirectTime !== "number") {
+  if (
+    typeof targetUrl !== "string" ||
+    typeof redirectTime !== "number" ||
+    !Array.isArray(quiz)
+  ) {
     return res.status(400).json({
-      message: "Invalid input"
+      message: "Invalid request"
     });
   }
 
@@ -37,20 +33,23 @@ router.post("/create", auth, (req, res) => {
 
   if (redirectTime < 0 || redirectTime > 1000) {
     return res.status(400).json({
-      message: "Redirect time must be between 0 and 1000 seconds"
+      message: "Redirect time must be between 0 to 1000 seconds"
     });
   }
 
-  const id = generateId();
+  const id = crypto.randomBytes(4).toString("base64url");
 
   links[id] = {
+    id,
     targetUrl,
     redirectTime,
-    createdAt: new Date()
+    quiz,
+    createdAt: new Date(),
+    clickCount: 0
   };
 
   res.status(201).json({
-    message: "Short link created successfully",
+    message: "Link created successfully!!!",
     shortUrl: `/s/${id}`
   });
 });
